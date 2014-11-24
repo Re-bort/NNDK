@@ -1,0 +1,119 @@
+#include <iostream>
+#include <fstream>
+#include <util/Command.h>
+#include <data/KMplex.h>
+#include <data/Dataset.h>
+#include <data/Scaler.h>
+#include <data/Standardiser.h>
+
+using namespace std;
+
+int main(unsigned argc, char ** argv)
+{
+	// Get the command arguments
+    Command command(argc, argv);
+
+    // Seed the PRNG
+    unsigned seed;
+    if(command.find("-r") != command.end())
+    {    
+        command.get("-r", seed);
+    } else 
+        seed = 0;
+    rng::seed(seed);
+
+	// Get the sampled database
+    Dataset database, cdatabase;
+    database.read(command.arg(0));
+    
+    // Get the clustered database
+    if(command.find("-c") != command.end())
+    {
+    	// Clustering is performed on the specified database
+    	string cdatabasename;
+    	command.get("-c", cdatabasename);
+        cdatabase.read(cdatabasename.c_str());
+        // NOTE: this may be used if the clustering is performed on a 
+    	// database with fewer variables, e.g. for induction-based 
+    	// sampling, which clusters only the single most important variable.
+	}
+    else
+    {
+		// Clustering is performed on the sampled database
+	   	cdatabase = database;
+    }
+    
+    // Include output variable in clustering
+	if(command.find("-y") != command.end())
+      cdatabase.X.push_backc(cdatabase.y);
+    
+    // Read SOM codebook vectors from file
+    matrix<double> codebook;
+    ifstream ifs(command.arg(1).c_str(), ios::in);
+    ifs >> codebook;
+    ifs.close();
+    
+   	// Standardise data and codebook
+	// Standardise data and codebook
+	Scaler encoder(cdatabase.X, -0.5, 0.5);
+	encoder.encode(cdatabase.X);
+	encoder.encode(codebook);
+	
+	// NOTE: Intra-cluster distance calculations used by Duplex sampling 
+	// from map units requires standardised data.
+    
+    // Partition clustered database on the SOM to obtain memberships
+    KMeans kmeans(cdatabase.X, codebook);
+	kmeans.query(cdatabase.X);
+    
+    // Create instance of KM-DUPLEX Datasplitting algorithm
+    KMplex sampler(database, kmeans);
+    
+    // Get sampling options from command arguments
+    if(command.find("-T") != command.end())
+    {
+        double T;
+        command.get("-T", T);
+        sampler.setTrainingFraction(T);
+    }
+
+    if(command.find("-t") != command.end())
+    {
+        double t;
+        command.get("-t", t);
+        sampler.setTestingFraction(t);
+    }
+    
+    if(command.find("-S") != command.end())
+    	sampler.setAllocation(KMplex::Single);
+    	
+    else if(command.find("-N") != command.end())
+   		sampler.setAllocation(KMplex::Neyman);
+   		
+   	else
+   		sampler.setAllocation(KMplex::Proportional);
+   	
+ 	sampler.resample();
+
+    if(command.find("-v") != command.end())
+    {
+        cout << "\nSampling: " << command.arg(0)
+            << "\nSeed: " << seed 
+            << "\nTraining frac.: " << sampler.trainingFraction()
+            << "\nTesting frac.: " << sampler.testingFraction()
+            << "\n\nTraining\n" << sampler.training().statistics()
+            << "\n\nTesting\n" << sampler.testing().statistics()
+            << "\n\nValidating\n" << sampler.validating().statistics() << endl;
+    }
+
+    // Write training and testing sample data files
+    sampler.training().write(command.arg(2));
+    sampler.testing().write(command.arg(3));
+    sampler.validating().write(command.arg(4));
+
+    return 0;
+}
+
+
+
+

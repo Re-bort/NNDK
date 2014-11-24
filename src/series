@@ -1,0 +1,6 @@
+#ifndef nww_series
+#define nww_series
+
+#include "stl/series.h"
+
+#endif // nww_series

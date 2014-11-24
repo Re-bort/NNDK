@@ -1,0 +1,107 @@
+#include <iostream>
+#include <fstream>
+#include <util/Command.h>
+#include <ann/KMeans.h>
+#include <data/Dataset.h>
+#include <data/Scaler.h>
+
+using namespace std;
+
+int main(unsigned argc, char ** argv)
+{
+    Command command(argc, argv);
+    
+    // Check no. of mandatory arguments (3)
+    if(command.size() < 3) 
+    {
+        cerr << "km-train: Insufficient arguments.\n"
+            << "Usage: som-train [data] [codebook] [histogram]" << endl;
+        return 1;
+    }
+    
+	Dataset dataset;
+	dataset.read(command.arg(0));
+	
+	matrix<double> X = dataset.X;
+	
+    // Option to include output variable in clustering
+    if(command.find("-y") != command.end())
+        X.push_backc(dataset.y);
+        
+    // Transform variables onto [-0.5, 0.5]
+    Scaler scaler(X, -0.5, 0.5);
+    scaler.encode(X);
+     
+    // Create SOM using default options, and display settings:
+    KMeans kmeans(X);
+    
+    // Parse optional arguments
+    if(command.find("-k") != command.end())
+    {
+    	unsigned k;
+    	command.get("-k", k);
+        kmeans.setK(k);
+    }
+        
+
+	if (command.find("-l") != command.end())
+    {
+   	    double rate;
+        command.get("-l", rate);
+        kmeans.setLearningRate(rate);
+    }
+    
+    if(command.find("-e") != command.end())
+    {
+    	unsigned epochs;
+        command.get("-e", epochs);
+        kmeans.setEpochs(epochs);
+    }
+        
+    // Seed random number generator
+    if(command.find("-r") != command.end())
+    {
+        unsigned seed;
+        command.get("-r", seed);
+        rng::seed(seed);
+    }
+
+	// 
+	cout << "K-means Clustering Parameters\n";
+	cout << "K:\t" << kmeans.K();
+	cout << "Learn rate:\t" << kmeans.learningRate() << endl;
+	cout << "Max. epochs:L:\t" << kmeans.epochs() << endl;
+			
+    // Train the SOM weights using the current settings:
+    kmeans.initialise();
+    kmeans.train();
+    kmeans.query(X);
+       
+    // Decode codebook into original data coordinate space
+    matrix<double> codebook = kmeans.codebook();
+    scaler.decode(codebook);
+           
+    // Write the SOM codebook (in restored scale) to a file
+    ofstream ofs(command.arg(1).c_str(), ios::out);
+    ofs << codebook << endl;
+    ofs.close();
+    
+    // Write the SOM histogram to a file
+    vector<double> histogram = kmeans.histogram();
+    ofs.open(command.arg(2).c_str(), ios::out);
+    ofs << histogram << endl;
+    ofs.close();
+    
+    // Optional (verbose) output to console
+    if(command.find("-v") != command.end())
+    {
+        cout << histogram << endl;
+        cout << "CV statistics\n" << "SS-intra:\t " << kmeans.ssintra() << '\n'
+        	<< endl;
+    }
+            
+    return 0;
+}
+
+
+

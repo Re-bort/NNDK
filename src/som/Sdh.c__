@@ -1,0 +1,71 @@
+#include "Sdh.h"
+
+using namespace std;
+
+som::Sdh::Sdh(const unsigned& smoothness, const Weighting& weighting)
+	: smoothness_(smoothness), weighting_(weighting)
+{}
+
+unsigned som::Sdh::smoothness() const
+{
+	return smoothness_;
+}
+
+void som::Sdh::setSmoothness(const unsigned& smoothness)
+{
+	smoothness_ = smoothness;
+}
+
+void som::Sdh::setWeighting(const som::Sdh::Weighting& weighting)
+{
+	weighting_ = weighting;
+}
+
+som::Sdh::Weighting som::Sdh::weighting() const
+{
+	return weighting_;
+}
+
+vector<double> som::Sdh::operator () (const matrix<double>& codebook,
+									   const matrix<double>& database)
+{
+	vector<double> f(codebook.rows(), 0.0);
+	matrix<double>::const_iterator x;
+	for(x = database.begin(); x != database.end(); ++x)
+	{
+		// Calcuate distance, d(x,c) for each c in codebook C.
+		vector<double> d;
+		vector<unsigned> index;
+		for(unsigned k = 0; k < codebook.rows(); ++k)
+		{
+			index.push_back(k);
+			d.push_back(euclidean(codebook[k], *x));
+		}
+		// Rank vector indices from closest to, to farthest from object x
+		sort(d, index);
+		// Add membership to frequency
+		if (weighting_ == distance)
+			for(unsigned i = 0; i < smoothness_ && i < codebook.rows(); ++i)
+				f[index[i]] += 1.0 - d[i]/distanceWeight(d);
+		else
+			for(unsigned i = 0; i < smoothness_ && i < codebook.rows(); ++i)
+				f[index[i]] += (double)(smoothness_ - i)/rankWeight();
+	}
+	return f;
+}
+
+double som::Sdh::rankWeight() 
+{
+	double rankWeight = 0;
+	for(unsigned i = 0; i < smoothness_; ++i)
+		rankWeight += i;
+	return rankWeight;
+}
+
+double som::Sdh::distanceWeight(const vector<double>& distance)
+{
+	double distanceWeight = 0.0;
+	for(unsigned i = 0; i < smoothness_; ++i)
+		distanceWeight += distance[i];
+	return distanceWeight;
+}

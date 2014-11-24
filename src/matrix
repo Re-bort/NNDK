@@ -1,0 +1,6 @@
+#ifndef nww_matrix
+#define nww_matrix
+
+#include "stl/matrix.h"
+
+#endif // nww_matrix

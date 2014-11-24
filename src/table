@@ -1,0 +1,6 @@
+#ifndef nww_table
+#define nww_table
+
+#include "stl/table.h"
+
+#endif

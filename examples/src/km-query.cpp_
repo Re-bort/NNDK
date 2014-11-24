@@ -1,0 +1,47 @@
+#include <iostream>
+#include <fstream>
+#include <util/Command.h>
+#include <ann/KMeans.h>
+#include <data/Dataset.h>
+
+using namespace std;
+
+int main(unsigned argc, char ** argv)
+{
+    Command command(argc, argv);
+
+    // Read dataset from file
+   	Dataset dataset;
+	dataset.read(command.arg(0));
+
+    // Add output variable if to be included in analysis.
+    matrix<double> X(dataset.X);
+    if(command.find("-y") != command.end())
+    {
+    	X.push_backc(dataset.y);
+    }
+
+    // Read codebook from file
+    matrix<double> codebook;
+    ifstream ifs(command.arg(1).c_str(), ios::in);
+    ifs >> codebook;
+    ifs.close();
+    
+    KMeans kmeans(X, codebook);
+    kmeans.query(X);
+    
+    if(command.find("-v") != command.end())
+	    cout << command.arg(0) << endl;
+    
+    if(command.find("-H") != command.end())
+        cout << kmeans.histogram() << endl;
+    
+    if(command.find("-M") != command.end())
+    	cout << kmeans.membership() << endl;
+    
+    return 0;
+}
+
+
+
+
