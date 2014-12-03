@@ -9,4 +9,5 @@ The aim was to develop a class library to implement fundamental ANN structures a
 
 An Excel add-in that provides a GUI for a pre-compiled set of tools for the development of ANN models for time-series forecasting and non-linear regression applications, was implemented using on the NNDK.
 
-For further information please visit: http://www.ecms.adelaide.edu.au/civeng/research/water/software/neural-network-excel-add-in/
+For further information please visit:
+http://www.ecms.adelaide.edu.au/civeng/research/water/software/neural-network-excel-add-in/
