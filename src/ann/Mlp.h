@@ -40,7 +40,7 @@ class Mlp {
 		double					biasV;			// Output bias weight
 		NeuronType				neuronType;
 		std::vector<Neuron *>	hiddenLayer;	
-		
+
 	private:
 		void					deleteNeurons();
 								

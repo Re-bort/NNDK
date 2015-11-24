@@ -5,13 +5,7 @@
 #
 # Last Updated: 6/10/2011
 #
-
-Archive = ar -r
-List=ar -t
-Build = g++
-Compile = g++ -c
 Flags = -Wall -O3 -fpermissive
-DebugFlags = "-Wall -g"
 Remove = del -/F
 
 Library = ./lib/libneural.a
@@ -27,26 +21,27 @@ Source += $(foreach Folder, $(SourceFolders), $(wildcard src/$(Folder)/*.cpp))
 
 Objects = $(patsubst src/%.cpp, obj/%.o, $(Source))
 
-all: $(Objects)
+BinariesSource= $(wildcard ./examples/src/*.cpp)
+Binaries = $(patsubst ./examples/src/%.cpp, ./examples/bin/%.exe, $(BinariesSource))
+
+all: $(Objects) $(Binaries)
 	@echo Building target library: $(Library)
-	@$(Archive) $(Library) $(Objects)
+	@ar -r $(Library) $(Objects)
 	@echo Done.
 	@echo
 	@echo Listing contents of library: $(Library)
-	@$(List) $(Library)
+	@ar -t $(Library)
 	@echo
 	@echo All done.
 	@echo
 	
 obj/%.o: src/%.cpp
 	@echo Compiling $@ from source files: $^
-	@$(Compile) $(Flags) $< -o $@
+	@g++ -c $(Flags) $< -o $@ -I./src
 
+examples/bin/%.exe: examples/src/%.cpp
+	@echo Building $@ from $<
+	g++ $(F;ags) $< -o$@ -I./src -L./lib -lneural
+	 
 clean:
-	@echo Cleaning source object files:
-	$(foreach Object, $(Objects), $(Remove) $(Object))
-	#@echo Done.
-	#@echo Cleaning target library file:
-	#@echo $(Remove) $(Library)
-	#@echo Done.
-	#@echo Done cleaning.
+

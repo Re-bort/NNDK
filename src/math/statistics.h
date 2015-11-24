@@ -247,16 +247,16 @@ double mre(const std::vector<T>& u, const std::vector<T>& v)
 template <typename T>	
 double mse(const std::vector<T>& u, const std::vector<T>& v)
 {
+	if (u.size() != v.size()) {
+		return 0.0;
+	}
 	double mse = 0.0;
 	typename std::vector<T>::const_iterator ui = u.begin();
 	typename std::vector<T>::const_iterator vi = v.begin();
-	while(ui != u.end() && vi != v.end())
-	{
+	for(; ui != u.end(); ++ui, ++vi) {
 		mse += pow(*vi - *ui, 2.0);
-		++ui;
-		++vi;
 	}
-	mse /= (double)v.size();
+	mse /= (double)u.size();
 	return mse;
 }
 
@@ -279,6 +279,11 @@ double sse(const std::vector<T>& u, const std::vector<T>& v)
 		++vi;
 	}
 	return sse;
+}
+
+template <typename T>
+inline double aic(const std::vector<T>& u, const std::vector<T>& v, const long k) {
+	return u.size() * log( mse(u, v) ) + 2.0 * k;
 }
 
 template <typename T>

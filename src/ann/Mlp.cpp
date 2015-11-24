@@ -47,8 +47,7 @@ double Mlp::operator () (VECTOR& x)
 	return y;
 }
 
-VECTOR Mlp::operator () (MATRIX& X)
-{
+VECTOR Mlp::operator () (MATRIX& X) {
 	VECTOR Y(X.rows());
 	VECTOR::iterator yi = Y.begin();
 	for(MATRIX::iterator xi = X.begin(); xi != X.end(); ++xi, ++yi)
@@ -60,12 +59,10 @@ VECTOR Mlp::operator () (MATRIX& X)
 		}
 		*yi += biasV;
 	}
-
 	return Y;
 }
 
-void Mlp::deleteNeurons()
-{
+void Mlp::deleteNeurons() {
 	for(unsigned i = 0; i < hiddenLayer.size(); ++i)
 		delete hiddenLayer[i];
 }

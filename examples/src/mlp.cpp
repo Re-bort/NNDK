@@ -24,25 +24,23 @@ int main(int argc, char ** argv)
     
     rng::seed();
     
+    // Read in datasets
     Dataset training, testing, validating;
     training.read(command.arg(0));
     testing.read(command.arg(1));
     validating.read(command.arg(2));
     
-    Mlp network(training.X.columns(), 3, LogisticFunc);
-    
-    // Get MLP properties specified at command-line
-    if(command.find("-h") != command.end())
-    {
-    	unsigned numHiddenLayerNodes;
-    	command.get("-h", numHiddenLayerNodes);	
-    	network.setHiddenLayerSize(numHiddenLayerNodes);
-    }
-    
+    // Get optional MLP properties specified at command-line
+	unsigned long numHiddenLayerNodes = 1;
+	if(command.find("-h") != command.end())
+	{
+		command.get("-h", numHiddenLayerNodes);
+	}
+
+    NeuronType neuronType = LogisticFunc;
     if(command.find("-n") != command.end())
     {
-   	    NeuronType neuronType;
-    	char flag;
+   	    char flag;
     	command.get("-n", flag);
     	switch(flag)
     	{
@@ -62,10 +60,11 @@ int main(int argc, char ** argv)
     			break;
     	}
     }
-    
-    Backpropagation trainer;
 
-    // Apply any BPA properties specified by command-line arguments
+    Mlp network(training.X.columns(), numHiddenLayerNodes, neuronType);
+
+    Backpropagation trainer;
+    // Get optional training parameters specified by command-line arguments
     if(command.find("-l") != command.end())
     {
     	double learningRate;
@@ -94,14 +93,13 @@ int main(int argc, char ** argv)
     	trainer.maxIterations = maxIterations;
     }
     
-    if(command.find("-e") != command.end())
-    {
+    if(command.find("-e") != command.end())  {
     	unsigned long maxEpochs;
     	command.get("-e", maxEpochs);	
     	trainer.maxEpochs = maxEpochs;
     }
     
-    // Scale data depending on transfer function
+    // Scale input data depending on transfer function
     double minInput, maxInput;
     switch(network.neuronType)
     {
@@ -123,14 +121,17 @@ int main(int argc, char ** argv)
     		maxInput = 0.8;
     		break;
     }
-    
+
     Scaler encoder(training.X, minInput, maxInput);
     encoder.encode(training.X);
     encoder.encode(testing.X);
     encoder.encode(validating.X);
     
-    network.initialiseWeights(0.1, 0.5);
-	trainer.initialise(network);
+    // Initialise network with small weights
+    network.initialiseWeights(minInput/10, maxInput/10);
+
+    // Initialise training algorithm and train network
+    trainer.initialise(network);
     trainer.trainOnlineCV(network, training.X, training.y, testing.X, testing.y);
     
     series<double> m_training(training.y.label + "'", network(training.X));

@@ -13,7 +13,7 @@ inline const double small()
 
 inline const double large()
 {
-	return 1.0+6;
+	return 1.0e+6;
 }
 
 inline const double golden()
