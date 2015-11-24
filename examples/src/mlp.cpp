@@ -114,7 +114,7 @@ int main(int argc, char ** argv)
     		break;
     		
     	case LogisticFunc:
-    		// Fallthrough
+    		// Fall through
 
     	default:
 			minInput = 0.2;
