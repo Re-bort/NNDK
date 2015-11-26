@@ -33,19 +33,13 @@ int main(int argc, char ** argv) {
 	testing.read(command.arg(1));
 	validating.read(command.arg(2));
 
-	Mlp network(training.X.columns(), 3, LogisticFunc);
-
+	NeuronType neuronType = LogisticFunc;
 	if (command.find("-n") != command.end()) {
-		NeuronType neuronType;
 		char flag;
 		command.get("-n", flag);
 		switch (flag) {
 		case 'H':	// Hyperbolic tangent
 			neuronType = TanhFunc;
-			break;
-
-		case 'T':	// Threshold
-			neuronType = ThresholdFunc;
 			break;
 
 		case 'L':	// Logistic (sigmoidal)
@@ -55,7 +49,6 @@ int main(int argc, char ** argv) {
 			neuronType = LogisticFunc;
 			break;
 		}
-		network.setNeuronType(neuronType);
 	}
 
 	// Get MLP properties specified at command-line
@@ -63,6 +56,8 @@ int main(int argc, char ** argv) {
 	if (command.find("-h") != command.end()) {
 		command.get("-h", max_hidden_nodes);
 	}
+
+	Mlp network(training.X.columns(), 1, neuronType);
 
 	Backpropagation trainer;
 	// Apply any BPA properties specified by command-line arguments
@@ -104,11 +99,6 @@ int main(int argc, char ** argv) {
 		maxInput = 0.8;
 		break;
 
-	case ThresholdFunc:
-		minInput = -1.0;
-		maxInput = 1.0;
-		break;
-
 	case LogisticFunc:
 		// Fallthrough
 
@@ -117,6 +107,8 @@ int main(int argc, char ** argv) {
 		maxInput = 0.8;
 		break;
 	}
+	double minInitialWeight = (maxInput - minInput) * 0.4 + minInput;
+	double maxInitialWeight = (maxInput - minInput) * 0.6 + minInput;
 
 	Scaler encoder(training.X, minInput, maxInput);
 	encoder.encode(training.X);
@@ -130,7 +122,7 @@ int main(int argc, char ** argv) {
 	long int optimum_num_hidden_nodes = 1;
 	for(unsigned long j = 0; j < max_hidden_nodes; ++j) {
 		network.setHiddenLayerSize(j + 1);
-		network.initialiseWeights(minInput/10.0, maxInput/10.0);
+		network.initialiseWeights(minInitialWeight, maxInitialWeight);
 		trainer.initialise(network);
 		trainer.trainOnlineCV(network, training.X, training.y, testing.X, testing.y);
 		std::vector<double> testing_outputs = network(testing.X);
@@ -145,7 +137,7 @@ int main(int argc, char ** argv) {
 	}
 
 	network.setHiddenLayerSize(optimum_num_hidden_nodes);
-	network.initialiseWeights(minInput/10.0, maxInput/10.0);
+	network.initialiseWeights(minInitialWeight, maxInitialWeight);
 	trainer.initialise(network);
 	trainer.trainOnlineCV(network, training.X, training.y, testing.X, testing.y);
 

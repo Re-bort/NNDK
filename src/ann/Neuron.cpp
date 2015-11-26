@@ -8,7 +8,7 @@ double Threshold::operator()(double z)
 {
 	zin = z;	// Store neuron activation level
 	if(z < 0)
-		act =  0.0;
+		act =  -1.0;
 	else
 		act = 1.0;
 

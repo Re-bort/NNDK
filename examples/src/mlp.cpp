@@ -47,11 +47,7 @@ int main(int argc, char ** argv)
     		case 'H':	// Hyperbolic tangent
     			neuronType = TanhFunc;
     			break;
-    			
-    		case 'T':	// Threshold
-    			neuronType = ThresholdFunc;
-    			break;
-    			
+
     		case 'L':	// Logistic (sigmoidal)
     			// Fall through
     		
@@ -101,8 +97,7 @@ int main(int argc, char ** argv)
     
     // Scale input data depending on transfer function
     double minInput, maxInput;
-    switch(network.neuronType)
-    {
+    switch(network.neuronType) {
     	case TanhFunc:
     		minInput = -0.8;
     		maxInput = 0.8;
@@ -127,8 +122,10 @@ int main(int argc, char ** argv)
     encoder.encode(testing.X);
     encoder.encode(validating.X);
     
-    // Initialise network with small weights
-    network.initialiseWeights(minInput/10, maxInput/10);
+    // Initialise network with small weights (within +/-10 % of scale mid-point)
+    double minInitialWeight = (maxInput - minInput) * 0.4 + minInput;
+    double maxInitialWeight = (maxInput - minInput) * 0.6 + minInput;
+    network.initialiseWeights(minInitialWeight, maxInitialWeight);
 
     // Initialise training algorithm and train network
     trainer.initialise(network);
@@ -197,7 +194,6 @@ int main(int argc, char ** argv)
         encoder.decode(validating.X);
         validating.write(command.arg(2));
     }
-
     return 0;
 }
 
